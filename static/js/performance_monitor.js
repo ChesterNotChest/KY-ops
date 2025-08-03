@@ -522,6 +522,9 @@ class PerformanceMonitor {
         this.updateElement('cpu-usage', `${Math.round(data.cpu_average || 0)}%`);
         this.updateElement('cpu-usage-text', `${Math.round(data.cpu_average || 0)}%`);
         this.updateElement('memory-usage', `${Math.round(data.memory_percent || 0)}%`);
+        this.updateElement('memory-usage-text', `${Math.round(data.memory_percent || 0)}%`);
+        this.updateElement('disk-usage', `${Math.round(data.disk_usage ? data.disk_usage.reduce((sum, disk) => sum + disk.percent, 0) / data.disk_usage.length : 0)}%`);
+        this.updateElement('disk-usage-text', `${Math.round(data.disk_usage ? data.disk_usage.reduce((sum, disk) => sum + disk.percent, 0) / data.disk_usage.length : 0)}%`);
         
         // 更新CPU名称和详细信息
         if (data.cpu_name) {
@@ -540,6 +543,7 @@ class PerformanceMonitor {
         const avgDiskUsage = data.disk_usage ? 
             data.disk_usage.reduce((sum, disk) => sum + disk.percent, 0) / data.disk_usage.length : 0;
         this.updateElement('disk-usage', `${Math.round(avgDiskUsage)}%`);
+        this.updateElement('disk-usage-text', `${Math.round(avgDiskUsage)}%`);
         
         // 计算总体负载
         const totalLoad = data.load_avg ? Math.round(data.load_avg[0] * 100) : Math.round(data.cpu_average || 0);

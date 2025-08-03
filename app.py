@@ -1,3 +1,4 @@
+from extune import common
 from flask import Flask, render_template, jsonify, request, send_file, make_response
 import psutil
 import platform
@@ -16,6 +17,21 @@ app = Flask(__name__)
 
 # 配置
 app.config['SECRET_KEY'] = 'your-secret-key-here'
+
+# 初始化实时CPU监控
+try:
+    from extune.category.get_cpu_info import RealTimeCPU
+    from extune.common.global_call import GlobalCall
+    real_time_cpu_monitor = RealTimeCPU(interval=2)
+    real_time_cpu_monitor.start_broadcasting()
+    print("CPU实时监控已启动")
+except ImportError as e:
+    print(f"无法导入实时CPU监控: {e}")
+    real_time_cpu_monitor = None
+except Exception as e:
+    print(f"启动实时CPU监控失败: {e}")
+    real_time_cpu_monitor = None
+
 
 # 添加CORS支持
 @app.after_request
@@ -314,15 +330,29 @@ def get_system_info_json():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+
 @app.route('/api/system-status')
 def system_status():
-    """获取系统状态信息"""
+    """获取系统状态信息（使用实时CPU数据）"""
     try:
-        cpu_percent = psutil.cpu_percent(interval=1)
+        # 从全局广播获取CPU数据
+        cpu_data = GlobalCall.real_time_cpu_data
+
+        # 如果没有实时数据，使用psutil作为后备
+        if not cpu_data:
+            cpu_percent = psutil.cpu_percent(interval=1)
+            cpu_model = "未知"
+        else:
+            cpu_percent = cpu_data['total_usage']
+            cpu_model = cpu_data['model_name']
+
         memory = psutil.virtual_memory()
-        
+
+        print(cpu_percent)
+
         return jsonify({
             'cpu_usage': cpu_percent,
+            'cpu_model': cpu_model,
             'memory_usage': memory.percent,
             'current_time': datetime.now().strftime('%H:%M'),
             'current_date': datetime.now().strftime('%Y/%m/%d'),
